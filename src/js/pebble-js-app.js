@@ -3,6 +3,7 @@ TIME_10_MINS = 10 * 60 * 1000,
 TIME_15_MINS = 15 * 60 * 1000,
 TIME_30_MINS = TIME_15_MINS * 2;
 
+
 var lastAlert = 0;
 var started = new Date( ).getTime( );
 
@@ -67,8 +68,8 @@ function fetchCgmData(lastReadTime, lastBG) {
                     sinceLastAlert = now - lastAlert,
                     alertValue = 0,currentBG = bgs[0].sgv,
                     currentBGDelta = bgs[0].bgdelta,
-                    currentDirection = bgs[0].direction,
-                    delta = (currentBGDelta > 0 ? '+' : '') + currentBGDelta + " mg/dL",
+                    currentTrend = bgs[0].trend,
+                    delta = (currentBGDelta > 0 ? '+' : '') + (currentBGDelta/ 18.01559).toFixed(1) + " mmol",
                     readingtime = new Date(bgs[0].datetime).getTime(),
                     readago = now - readingtime;
                     
@@ -76,25 +77,25 @@ function fetchCgmData(lastReadTime, lastBG) {
                     console.log("readingtime: " + readingtime);
                     console.log("readago: " + readago);
                     
-                    if (currentBG < 39) {
+                    if (currentBG < 2) {
                         if (sinceLastAlert > TIME_10_MINS) alertValue = 2;
-                    } else if (currentBG < 55)
+                    } else if (currentBG < 3)
                         alertValue = 2;
-                    else if (currentBG < 60 && currentBGDelta < 0)
+                    else if (currentBG < 3.5 && currentBGDelta < 0)
                         alertValue = 2;
-                    else if (currentBG < 70 && sinceLastAlert > TIME_15_MINS)
+                    else if (currentBG < 4 && sinceLastAlert > TIME_15_MINS)
                         alertValue = 2;
-                    else if (currentBG < 120 && currentDirection == 'DoubleDown' && sinceLastAlert > TIME_5_MINS)
+                    else if (currentBG < 6.5 && currentTrend == 7 && sinceLastAlert > TIME_5_MINS) //DBL_DOWN
                         alertValue = 2;
-                    else if (currentBG == 100 && currentDirection == 'Flat' && sinceLastAlert > TIME_15_MINS) //Perfect Score - a good time to take a picture :)
+                    else if (currentBG == 5.5 && currentTrend == 4 && sinceLastAlert > TIME_15_MINS) //PERFECT SCORE
                         alertValue = 1;
-                    else if (currentBG > 120 && currentDirection == 'DoubleUp' && sinceLastAlert > TIME_15_MINS)
+                    else if (currentBG > 6.5 && currentTrend == 1 && sinceLastAlert > TIME_15_MINS) //DBL_UP
                         alertValue = 3;
-                    else if (currentBG > 200 && sinceLastAlert > TIME_30_MINS && currentBGDelta > 0)
+                    else if (currentBG > 10 && sinceLastAlert > TIME_30_MINS && currentBGDelta > 0)
                         alertValue = 3;
-                    else if (currentBG > 250 && sinceLastAlert > TIME_30_MINS)
+                    else if (currentBG > 14 && sinceLastAlert > TIME_30_MINS)
                         alertValue = 3;
-                    else if (currentBG > 300 && sinceLastAlert > TIME_15_MINS)
+                    else if (currentBG > 17 && sinceLastAlert > TIME_15_MINS)
                         alertValue = 3;
                     
                     if (alertValue === 0 && readago > TIME_10_MINS && sinceLastAlert > TIME_15_MINS) {
@@ -106,7 +107,7 @@ function fetchCgmData(lastReadTime, lastBG) {
                     }
                     
                     message = {
-                    icon: directionToTrend(currentDirection),
+                    icon: bgs[0].trend,
                     bg: currentBG,
                     readtime: timeago(new Date().getTime() - (new Date(bgs[0].datetime).getTime())),
                     alert: alertValue,
@@ -142,7 +143,7 @@ function formatDate(date) {
     meridiem = " PM",
     formatted;
     
-    if (hours > 12)
+    if (hours >= 12)
         hours = hours - 12;
     else if (hours < 12)
         meridiem = " AM";
@@ -349,4 +350,3 @@ Pebble.addEventListener("webviewclosed", function(e) {
                         options(opts);
                         
                         });
-
